@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { simulateAnalysis } from "../../../entities/riskScore/model";
 import type { AnalysisResult } from "../../../shared/types";
 import { RiskCard } from "../../../widgets/RiskCard";
 import { Loader2, Search, ShieldAlert } from "lucide-react";
@@ -12,13 +11,38 @@ export function AnalyzeMessageForm() {
   const [loading, setLoading] = useState(false);
 
   async function handleAnalyze() {
-    if (!message.trim()) return;
-    setLoading(true);
-    setResult(null);
-    const analysis = await simulateAnalysis(message);
-    setResult(analysis);
-    setLoading(false);
+  if (!message.trim()) return;
+
+  setLoading(true);
+  setResult(null);
+
+  try {
+    const res = await fetch(
+      "https://securepay-backend-urpg.onrender.com/analyze",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: message,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    setResult({
+      riskScore: data.riskScore,
+      status: data.status,
+      reasons: ["AI model prediction"], // optional
+    });
+  } catch (err) {
+    console.log(err);
   }
+
+  setLoading(false);
+}
 
   return (
     <div className="space-y-6">
