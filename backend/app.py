@@ -1,10 +1,10 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
-from fastapi.middleware.cors import CORSMiddleware
 
-# create app first
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,7 +13,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# load model
 model = joblib.load("saved_model/model.pkl")
 vectorizer = joblib.load("saved_model/vectorizer.pkl")
 
