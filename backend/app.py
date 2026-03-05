@@ -1,61 +1,20 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
-import joblib
-import pytesseract
-from PIL import Image
-import io
+import easyocr
+import numpy as np
+import cv2
 
-app = FastAPI()
-
-# Allow frontend requests
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Load ML model and vectorizer
-model = joblib.load("saved_model/model.pkl")
-vectorizer = joblib.load("saved_model/vectorizer.pkl")
-
-
-@app.get("/")
-def home():
-    return {"message": "SecurePay AI Backend Running"}
-
-
-# -------- TEXT ANALYSIS --------
-
-@app.post("/analyze")
-def analyze(data: dict):
-
-    text = data["text"]
-
-    vec = vectorizer.transform([text])
-
-    pred = model.predict(vec)[0]
-
-    risk_score = 80 if pred == 1 else 10
-    status = "Scam" if pred == 1 else "Safe"
-
-    return {
-        "riskScore": risk_score,
-        "status": status
-    }
-
-
-# -------- IMAGE ANALYSIS --------
+reader = easyocr.Reader(['en'])
 
 @app.post("/analyze-image")
 async def analyze_image(file: UploadFile = File(...)):
 
     contents = await file.read()
 
-    image = Image.open(io.BytesIO(contents))
+    nparr = np.frombuffer(contents, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    extracted_text = pytesseract.image_to_string(image)
+    result = reader.readtext(image)
+
+    extracted_text = " ".join([text[1] for text in result])
 
     vec = vectorizer.transform([extracted_text])
 
