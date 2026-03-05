@@ -31,15 +31,16 @@ def analyze(msg: Message):
 
     vec = vectorizer.transform([msg.text])
 
-    pred = model.predict(vec)[0]
-    prob = model.predict_proba(vec)[0][1]
+    prediction = model.predict(vec)[0]
 
-    risk = int(prob * 100)
-
-    status = "Scam" if pred == 1 else "Safe"
+    if prediction == 1:
+        status = "Scam"
+        risk = 80
+    else:
+        status = "Safe"
+        risk = 10
 
     return {
-        "message": msg.text,
         "riskScore": risk,
         "status": status
     }
