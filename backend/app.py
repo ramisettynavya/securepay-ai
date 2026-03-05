@@ -2,6 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
+from fastapi import FastAPI, UploadFile, File
+from PIL import Image
+import pytesseract
+import io
+
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+app = FastAPI()
 
 app = FastAPI()
 
@@ -26,10 +34,16 @@ def home():
     return {"msg": "Backend running"}
 
 
-@app.post("/analyze")
-def analyze(msg: Message):
+@app.post("/analyze-image")
+async def analyze_image(file: UploadFile = File(...)):
 
-    vec = vectorizer.transform([msg.text])
+    contents = await file.read()
+
+    image = Image.open(io.BytesIO(contents))
+
+    extracted_text = pytesseract.image_to_string(image)
+
+    vec = vectorizer.transform([extracted_text])
 
     prediction = model.predict(vec)[0]
 
@@ -41,6 +55,7 @@ def analyze(msg: Message):
         risk = 10
 
     return {
+        "extracted_text": extracted_text,
         "riskScore": risk,
         "status": status
     }

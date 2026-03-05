@@ -3,3 +3,6 @@ uvicorn
 pandas
 scikit-learn
 joblib
+pytesseract
+Pillow
+python-multipart
