@@ -3,9 +3,4 @@ uvicorn
 pandas
 scikit-learn
 joblib
-pillow
 python-multipart
-easyocr
-torch
-torchvision
-opencv-python

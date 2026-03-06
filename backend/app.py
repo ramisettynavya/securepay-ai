@@ -1,30 +1,45 @@
-import easyocr
-import numpy as np
-import cv2
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import joblib
 
-reader = easyocr.Reader(['en'])
+app = FastAPI()
 
-@app.post("/analyze-image")
-async def analyze_image(file: UploadFile = File(...)):
+# Allow frontend requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    contents = await file.read()
+# Load trained ML model
+model = joblib.load("saved_model/model.pkl")
+vectorizer = joblib.load("saved_model/vectorizer.pkl")
 
-    nparr = np.frombuffer(contents, np.uint8)
-    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    result = reader.readtext(image)
+@app.get("/")
+def home():
+    return {"message": "SecurePay AI Backend Running"}
 
-    extracted_text = " ".join([text[1] for text in result])
 
-    vec = vectorizer.transform([extracted_text])
+@app.post("/analyze")
+def analyze(data: dict):
 
-    pred = model.predict(vec)[0]
+    text = data["text"]
 
-    risk_score = 80 if pred == 1 else 10
-    status = "Scam" if pred == 1 else "Safe"
+    vec = vectorizer.transform([text])
+
+    prediction = model.predict(vec)[0]
+
+    if prediction == 1:
+        risk_score = 80
+        status = "Scam"
+    else:
+        risk_score = 10
+        status = "Safe"
 
     return {
-        "extracted_text": extracted_text,
         "riskScore": risk_score,
         "status": status
     }
